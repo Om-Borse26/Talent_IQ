@@ -25,8 +25,11 @@ export async function executeCode(language, code) {
       };
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(`${PISTON_API}/execute`, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -51,8 +54,10 @@ export async function executeCode(language, code) {
 
     const data = await response.json();
 
-    const output = data.run.output || "";
-    const stderr = data.run.stderr || "";
+    const output = data?.run?.output ?? "";
+    const runStderr = data?.run?.stderr ?? "";
+    const compileStderr = data?.compile?.stderr ?? "";
+    const stderr = compileStderr || runStderr;
 
     if (stderr) {
       return {
@@ -66,7 +71,6 @@ export async function executeCode(language, code) {
       success: true,
       output: output || "No output",
     };
-    
   } catch (error) {
     return {
       success: false,

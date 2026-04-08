@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { PROBLEMS } from "../data/problems.js";
 import Navbar from "../components/Navbar.jsx";
@@ -18,7 +18,9 @@ function ProblemPage() {
 
   const [currentProblemId, setCurrentProblemId] = useState("two-sum");
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(PROBLEMS[currentProblemId].starterCode.javascript);
+  const [code, setCode] = useState(
+    PROBLEMS[currentProblemId].starterCode.javascript,
+  );
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -40,7 +42,8 @@ function ProblemPage() {
     setOutput(null);
   };
 
-  const handleProblemChange = (newProblemId) => navigate(`/problem/${newProblemId}`);
+  const handleProblemChange = (newProblemId) =>
+    navigate(`/problem/${newProblemId}`);
 
   const triggerConfetti = () => {
     confetti({
@@ -68,7 +71,7 @@ function ProblemPage() {
           .replace(/\[\s+/g, "[")
           .replace(/\s+\]/g, "]")
           // normalize spaces around commas to single space after comma
-          .replace(/\s*,\s*/g, ",")
+          .replace(/\s*,\s*/g, ","),
       )
       .filter((line) => line.length > 0)
       .join("\n");
@@ -81,28 +84,26 @@ function ProblemPage() {
     return normalizedActual == normalizedExpected;
   };
 
+  const runIdRef = useRef(0);
+
   const handleRunCode = async () => {
+    const runId = ++runIdRef.current;
     setIsRunning(true);
     setOutput(null);
 
-    const result = await executeCode(selectedLanguage, code);
-    setOutput(result);
-    setIsRunning(false);
+    try {
+      const result = await executeCode(selectedLanguage, code);
+      if (runId !== runIdRef.current) return; // stale response
+      setOutput(result);
 
-    // check if code executed successfully and matches expected output
-
-    if (result.success) {
-      const expectedOutput = currentProblem.expectedOutput[selectedLanguage];
-      const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
-
-      if (testsPassed) {
-        triggerConfetti();
-        toast.success("All tests passed! Great job!");
+      if (result.success) {
+        const expectedOutput = currentProblem.expectedOutput[selectedLanguage];
+        const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
       } else {
-        toast.error("Tests failed. Check your output!");
+        toast.error("Code execution failed!");
       }
-    } else {
-      toast.error("Code execution failed!");
+    } finally {
+      if (runId === runIdRef.current) setIsRunning(false);
     }
   };
 
