@@ -1,14 +1,9 @@
 import { Link, useLocation } from "react-router";
 import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
-import { sessionApi } from "../api/sessions";
 
 function Navbar() {
   const location = useLocation();
-
-  useEffect(() => {
-    sessionApi.getStreamToken().catch(console.error);
-  }, []);
 
   console.log(location);
 
