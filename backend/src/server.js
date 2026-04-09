@@ -21,8 +21,8 @@ app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
 app.use(clerkMiddleware()); //* this adds auth field to request object : req.auth()
 
 app.use("/inngest", serve({ client: inngest, functions }));
-app.get("/chat",chatRoutes);
-app.get("/sessions",sessionRoutes);
+app.use("/chat", chatRoutes);
+app.use("/sessions", sessionRoutes);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ msg: "API is up and running" });
