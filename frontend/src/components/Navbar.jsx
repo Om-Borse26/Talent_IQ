@@ -1,9 +1,14 @@
 import { Link, useLocation } from "react-router";
 import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
+import { sessionApi } from "../api/sessions";
 
 function Navbar() {
   const location = useLocation();
+
+  useEffect(() => {
+    sessionApi.getStreamToken().catch(console.error);
+  }, []);
 
   console.log(location);
 
@@ -25,7 +30,9 @@ function Navbar() {
             <span className="font-black text-xl bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-mono tracking-wider">
               Talent IQ
             </span>
-            <span className="text-xs text-base-content/60 font-medium -mt-1">Code Together</span>
+            <span className="text-xs text-base-content/60 font-medium -mt-1">
+              Code Together
+            </span>
           </div>
         </Link>
 
