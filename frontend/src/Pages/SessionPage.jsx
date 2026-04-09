@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   useEndSession,
@@ -29,8 +29,12 @@ function SessionPage() {
   const {
     data: sessionData,
     isLoading: loadingSession,
+    error: sessionError,
     refetch,
   } = useSessionById(id);
+
+  // Prevent the auto-join effect from firing on every poll cycle.
+  const hasAutoJoined = useRef(false);
 
   const joinSessionMutation = useJoinSession();
   const endSessionMutation = useEndSession();
@@ -56,10 +60,11 @@ function SessionPage() {
   useEffect(() => {
     if (!session || !user || loadingSession) return;
     if (isHost || isParticipant) return;
+    // Only attempt join once per mount — polling refetches must not re-trigger it.
+    if (hasAutoJoined.current) return;
 
+    hasAutoJoined.current = true;
     joinSessionMutation.mutate(id, { onSuccess: refetch });
-
-    // remove the joinSessionMutation, refetch from dependencies to avoid infinite loop
   }, [session, user, loadingSession, isHost, isParticipant, id]);
 
   // redirect the "participant" when session ends
@@ -106,6 +111,39 @@ function SessionPage() {
       });
     }
   };
+
+  // Show a clear error state instead of silently hanging on load failures.
+  if (sessionError) {
+    const is404 = sessionError?.response?.status === 404;
+    const is403 = sessionError?.response?.status === 403;
+    return (
+      <div className="h-screen bg-base-100 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="card bg-base-200 shadow-xl max-w-md w-full">
+            <div className="card-body items-center text-center gap-4">
+              <h2 className="card-title text-2xl">
+                {is404 ? "Session Not Found" : is403 ? "Access Denied" : "Something Went Wrong"}
+              </h2>
+              <p className="text-base-content/70">
+                {is404
+                  ? "This session doesn't exist or has been removed."
+                  : is403
+                  ? "You don't have permission to access this session."
+                  : "Failed to load the session. Please try again later."}
+              </p>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="btn btn-primary"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-base-100 flex flex-col">
