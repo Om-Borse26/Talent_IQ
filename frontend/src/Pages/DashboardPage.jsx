@@ -48,7 +48,7 @@ function DashboardPage() {
   const recentSessions = recentSessionsData?.sessions || [];
 
   const isUserInSession = (session) => {
-    if (!user.id) return false;
+    if (!user?.id) return false;
 
     return (
       session.host?.clerkId === user.id ||
